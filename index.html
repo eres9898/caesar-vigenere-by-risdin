@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Caesar Vigenere</title>
+  <!-- Tambahkan library PDF.js -->
+  <script src="https://unpkg.com/pdfjs-dist@2.10.377/build/pdf.js"></script>
+  <!-- Tambahkan library mammoth.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.0.0/mammoth.browser.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+  <script src="https://unpkg.com/html2pdf.js"></script>
+
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #186F65; /* Warna latar belakang */
+      color: #fff; /* Warna teks */
+      text-align: center;
+      margin: 0;
+      padding: 0;
+    }
+
+    h1 {
+      padding: 20px;
+      background-color: #B5CB99; /* Warna latar belakang judul */
+      color: #186F65; /* Warna teks judul */
+    }
+
+    .container {
+      display: flex;
+      justify-content: space-between;
+      padding: 20px;
+    }
+
+    .form-container {
+      flex: 1;
+      text-align: center;
+      padding: 20px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      margin: 10px;
+      background-color: #FCE09B; /* Warna latar belakang form */
+      color: #B2533E; /* Warna teks form */
+      transition: background-color 0.2s, color 0.2s;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); /* Efek bayangan */
+    }
+
+    .form-container:hover {
+      background-color: #B5CB99; /* Warna latar belakang form saat dihover */
+      color: #186F65; /* Warna teks form saat dihover */
+      transform: translateY(-5px); /* Efek naik saat dihover */
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.3); /* Bayangan lebih tebal saat dihover */
+    }
+
+    .result {
+      text-align: left;
+    }
+
+    footer {
+      background-color: #186F65; /* Warna latar belakang footer */
+      color: #fff; /* Warna teks footer */
+      padding: 10px 0;
+      text-align: center;
+    }
+
+    .btn {
+      background-color: #B5CB99; /* Warna tombol */
+      color: #fff; /* Warna teks tombol */
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.2s, color 0.2s;
+    }
+
+    .btn:hover {
+      background-color: #FCE09B; /* Warna tombol saat dihover */
+      color: #B2533E; /* Warna teks tombol saat dihover */
+    }
+
+    .contact-info {
+      background-color: #186F65; /* Warna latar belakang kontak info */
+      color: #fff; /* Warna teks kontak info */
+      padding: 10px 0;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <h1>Enkripsi & Deskripsi Teks</h1>
+    <div class="form-container">
+    <h2>Caesar Vigenere Cipher -- Enkripsi & Deskripsi</h2>
+    <form id="vigenereForm">
+      <div class="form-group">
+        <label for="vigenereInput">Teks untuk Enkripsi/Deskripsi:</label>
+        <textarea class="form-control" id="vigenereInput" rows="5"></textarea>
+      </div>
+      <div class="form-group">
+        <label for="fileInputVigenere">Unggah file:</label>
+        <input type="file" id="fileInputVigenere" accept=".txt, .pdf, .docx, .xlsx" onchange="handleFile('vigenereInput', 'fileInputVigenere')">
+      </div>
+      <div class="form-group">
+        <label for="vigenereKey">Kunci Vigenere:</label>
+        <input type="text" class="form-control" id="vigenereKey" placeholder="Masukkan kunci Vigenere">
+      </div>
+      <div class="button-group">
+        <button type="button" class="btn" id="vigenereEncryptButton" onclick="vigenereCipher('encrypt')">Enkripsi</button>
+        <button type="button" class="btn" id="vigenereDecryptButton" onclick="vigenereCipher('decrypt')">Deskripsi</button>
+        <button type="button" class="btn" id="vigenereDownloadButton" onclick="downloadFile('vigenereResult', 'fileInputVigenere', 'Vigenere')">Download</button>
+
+      </div>
+    </form>
+    <div class="result">
+      <h3>Hasil:</h3>
+      <p id="vigenereResult"></p>
+    </div>
+  </div>
+
+  <footer>
+    &copy; 2023. <b>Risdin Saputra - 2111051</b> All Right Reserved. Contact:
+    <a href="https://www.instagram.com/eres98__" target="_blank">
+      <img src="instagram.png" alt="Instagram" width="20" height="20">
+    </a>
+    <a href="https://wa.me/6285173276374" target="_blank">
+      <img src="whatsapp.png" alt="WhatsApp" width="20" height="20">
+    </a>
+  </footer>
+
+  <script>
+    function handleFile(textareaId, inputFileId) {
+      const textarea = document.getElementById(textareaId);
+      const inputFile = document.getElementById(inputFileId);
+    
+      const file = inputFile.files[0];
+      const reader = new FileReader();
+    
+      reader.onload = function (e) {
+        const fileType = getFileType(file.name);
+        switch (fileType) {
+          case 'txt':
+            textarea.value = e.target.result;
+            break;
+          case 'pdf':
+            readPDF(file, textarea);
+            break;
+          case 'docx':
+            readDOCX(file, textarea);
+            break;
+          case 'xlsx':
+            readXLSX(file, textarea);
+            break;
+          default:
+            alert('Unsupported file type');
+        }
+      };
+      reader.readAsText(file);
+    }
+    
+    // ...
+    function readXLSX(file, textarea) {
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        let xlsxText = '';
+    
+        workbook.SheetNames.forEach((sheetName) => {
+          const sheet = workbook.Sheets[sheetName];
+          xlsxText += XLSX.utils.sheet_to_csv(sheet, { raw: true });
+        });
+    
+        textarea.value = xlsxText;
+      };
+      reader.readAsArrayBuffer(file);
+    }
+    //......
+
+    function getFileType(fileName) {
+      const extension = fileName.split('.').pop().toLowerCase();
+      return extension;
+    }
+
+    function readPDF(file, textarea) {
+      const fileReader = new FileReader();
+      fileReader.onload = async function () {
+        const arrayBuffer = this.result;
+        const typedArray = new Uint8Array(arrayBuffer);
+        const pdf = await pdfjsLib.getDocument(typedArray).promise;
+        let pdfText = '';
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          const textContent = await page.getTextContent();
+          pdfText += textContent.items.map(item => item.str).join(' ');
+        }
+        textarea.value = pdfText;
+      };
+      fileReader.readAsArrayBuffer(file);
+    }
+    
+    function readDOCX(file, textarea) {
+      const fileReader = new FileReader();
+      fileReader.onload = function () {
+        const arrayBuffer = this.result;
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          const result = e.target.result;
+          mammoth.extractRawText({ arrayBuffer: arrayBuffer })
+            .then(displayResult)
+            .catch(handleError);
+          function displayResult(result) {
+            textarea.value = result.value;
+          }
+          function handleError(err) {
+            console.log(err);
+          }
+        };
+        reader.readAsArrayBuffer(new Blob([new Uint8Array(arrayBuffer)]));
+      };
+      fileReader.readAsArrayBuffer(file);
+    }
+    
+    function vigenereCipher(action) {
+      const input = document.getElementById('vigenereInput').value;
+      const key = document.getElementById('vigenereKey').value.toUpperCase();
+      let keyIndex = 0;
+      const result = input.replace(/[a-zA-Z]/g, function (c) {
+        const base = c <= 'Z' ? 'A'.charCodeAt(0) : 'a'.charCodeAt(0);
+        const shift = key.charCodeAt(keyIndex) - 'A'.charCodeAt(0);
+        keyIndex = (keyIndex + 1) % key.length;
+        const shiftedCharCode =
+          action === 'encrypt' ? base + ((c.charCodeAt(0) - base + shift) % 26) :
+          action === 'decrypt' ? base + ((c.charCodeAt(0) - base - shift + 26) % 26) :
+          c.charCodeAt(0); // No change if neither encrypt nor decrypt
+        return String.fromCharCode(shiftedCharCode);
+      });
+      document.getElementById('vigenereResult').textContent = result;
+    }
+    
+    
+    function downloadFile(resultId, inputFileId, fileName) {
+      const result = document.getElementById(resultId).textContent;
+      const inputFile = document.getElementById(inputFileId);
+      const fileType = getFileType(inputFile.files[0].name);
+      const mimeType = getMimeType(fileType);
+    
+      let content;
+      if (mimeType.includes('text')) {
+        // Menambahkan BOM untuk file teks
+        content = '\uFEFF' + result;
+      } else {
+        content = result;
+      }
+    
+      const blob = new Blob([content], { type: mimeType });
+    
+      // Pendekatan alternatif
+      if (navigator.msSaveBlob) {
+        // IE mendukung metode ini
+        navigator.msSaveBlob(blob, `${fileName}_result.${fileType}`);
+      } else {
+        // Browsers modern
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `${fileName}_result.${fileType}`;
+    
+        document.body.appendChild(link);
+        link.click();
+    
+        // Membersihkan setelah selesai
+        setTimeout(() => {
+          document.body.removeChild(link);
+          URL.revokeObjectURL(link.href);
+        }, 100);
+      }
+    }
+    
+    
+    function getMimeType(fileType) {
+      switch (fileType) {
+        case 'txt':
+          return 'text/plain';
+        case 'pdf':
+          return 'application/pdf';
+        case 'docx':
+          return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+        case 'xlsx':
+          return 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+        default:
+          return 'application/octet-stream'; // Set a default type for unsupported file types
+      }
+    }
+    
+
+  </script>
+</body>
+</html>
